@@ -4,8 +4,10 @@ import Button from '../../components/Shared/Button/Button'
 import PurchaseModal from '../../components/Modal/PurchaseModal'
 import { useState } from 'react'
 import { useLoaderData } from 'react-router'
+import useAuth from '../../hooks/useAuth'
 
 const PlantDetails = () => {
+  const {user}= useAuth()
   const plant= useLoaderData();
  let [isOpen, setIsOpen] = useState(false)
 if(!plant || typeof plant !== "object")return <p>Sorry vai...</p>
@@ -82,12 +84,17 @@ if(!plant || typeof plant !== "object")return <p>Sorry vai...</p>
           <div className='flex justify-between'>
             <p className='font-bold text-3xl text-gray-500'>Price: {price}$</p>
             <div>
-              <Button onClick={() => setIsOpen(true)} label='Purchase' />
+              
+              <Button 
+              disabled={!user}
+              onClick={() => setIsOpen(true)} label={user? "Purchase": "Log in to Purchase"} />
             </div>
           </div>
           <hr className='my-6' />
 
-          <PurchaseModal closeModal={closeModal} isOpen={isOpen} />
+          <PurchaseModal
+           plant={plant}
+           closeModal={closeModal} isOpen={isOpen} />
         </div>
       </div>
     </Container>
