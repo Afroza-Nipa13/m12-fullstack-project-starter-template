@@ -47,6 +47,7 @@ async function run() {
   const db=client.db('plantdb')
   const plantsCollection = db.collection('plants')
   const ordersCollection = db.collection('orders')
+  const usersCollection = db.collection('users')
   try {
     // Generate jwt token
     app.post('/jwt', async (req, res) => {
@@ -120,11 +121,65 @@ async function run() {
     res.send({ClientSecret: client_secret})
     })
 
+    // save or update user info in db
+
+    app.post('/user', async(req, res)=>{
+      const userData = req.body;
+      userData.role = "customer"
+      userData.created_at =new Date().toISOString()
+      userData.last_logged_in=new Date().toISOString()
+      
+      const query = { email: userData?.email }
+      
+
+      const alreadyExist =await usersCollection.findOne(query)
+      console.log('user already exist', !!alreadyExist)
+      
+      if(!!alreadyExist){
+      console.log('updating user...')
+       const result = await usersCollection.updateOne(query,
+        { $set: { last_logged_in:new Date().toISOString() }
+       })
+       return res.send(result)
+      }
+      console.log('creating user...')
+      
+      const result = await usersCollection.insertOne(userData)
+      res.send(result)
+    })
+
+    // get a user's role
+    app.get('/user/role/:email', async(req, res) =>{
+      const email = req.params.email;
+      
+      const result = await usersCollection.findOne({email})
+      if(!result){
+        return res.status(401).send({message:'user not found'})
+      }
+      res.send({role:result?.role})
+    }) 
+
     // save ordered collection data in db
     app.post('/order', async (req, res)=> {
       const orderData = req.body;
       const result= await ordersCollection.insertOne(orderData)
       res.send(result)
+    })
+
+    // update quantity increase/decrease
+    app.patch('/quantity-update/:id', async(req, res)=>{
+      const id =req.params.id;
+      const {quantityToUpdate, status}= req.body;
+      const filter = { _id : new ObjectId(id)}
+      const updateDoc = {
+        $inc:{
+          quantity:
+          status === 'increase'?quantityToUpdate : -quantityToUpdate
+        }
+      }
+      const result = await plantsCollection.updateOne(filter, updateDoc)
+      res.send(result)
+        
     })
 
     // Send a ping to confirm a successful connection

@@ -3,18 +3,40 @@ import Heading from '../../components/Shared/Heading'
 import Button from '../../components/Shared/Button/Button'
 import PurchaseModal from '../../components/Modal/PurchaseModal'
 import { useState } from 'react'
-import { useLoaderData } from 'react-router'
+import {  useParams } from 'react-router'
 import useAuth from '../../hooks/useAuth'
-
+import useRole from '../../hooks/useRole'
+import LoadingSpinner from '../../components/Shared/LoadingSpinner'
+import { useQuery } from '@tanstack/react-query'
+import axios from 'axios'
 const PlantDetails = () => {
-  const {user}= useAuth()
-  const plant= useLoaderData();
- let [isOpen, setIsOpen] = useState(false)
-if(!plant || typeof plant !== "object")return <p>Sorry vai...</p>
- 
-  const {quantity,description,name,price,seller,category,image}= plant || {};
+  const { id } = useParams()
+  const { user } = useAuth()
+  let [isOpen, setIsOpen] = useState(false)
+  const [role, isRoleLoading] = useRole();
+
+  const { 
+    data: plant, 
+    isLoading, 
+    refetch } = useQuery({
+    queryKey: ['plant', id],
+    queryFn: async()=>{
+      const {data}= await axios(
+        `${import.meta.env.VITE_API_URL}/plants/${id}`
+)
+return data
+},
+    
+})
+
+  if (!plant || typeof plant !== "object") return <p>Sorry vai...</p>
+
+  const { quantity, description, name, price, seller, category, image } = plant || {};
   const closeModal = () => {
     setIsOpen(false)
+  }
+  if (isRoleLoading || isLoading) {
+    return <LoadingSpinner></LoadingSpinner>
   }
 
   return (
@@ -84,17 +106,19 @@ if(!plant || typeof plant !== "object")return <p>Sorry vai...</p>
           <div className='flex justify-between'>
             <p className='font-bold text-3xl text-gray-500'>Price: {price}$</p>
             <div>
-              
-              <Button 
-              disabled={!user}
-              onClick={() => setIsOpen(true)} label={user? "Purchase": "Log in to Purchase"} />
+
+              <Button
+                disabled={!user || user?.email === seller.email || role !== 'customer'}
+                onClick={() => setIsOpen(true)} label={user ? "Purchase" : "Log in to Purchase"} />
             </div>
           </div>
           <hr className='my-6' />
 
           <PurchaseModal
-           plant={plant}
-           closeModal={closeModal} isOpen={isOpen} />
+            plant={plant}
+            closeModal={closeModal} 
+            isOpen={isOpen}
+            fetchPlant={refetch} />
         </div>
       </div>
     </Container>

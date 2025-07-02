@@ -6,7 +6,7 @@ import useAxiosSecure from '../../hooks/useAxiosSecure';
 import useAuth from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
 
-const CheckoutForm = ({ totalPrice, closeModal, orderedData }) => {
+const CheckoutForm = ({ totalPrice, closeModal, orderedData,fetchPlant }) => {
     const { user } = useAuth();
     const axiosSecure = useAxiosSecure()
     const stripe = useStripe();
@@ -31,14 +31,8 @@ const CheckoutForm = ({ totalPrice, closeModal, orderedData }) => {
         event.preventDefault();
 
         if (!stripe || !elements) {
-            // Stripe.js has not loaded yet. Make sure to disable
-            // form submission until Stripe.js has loaded.
             return;
         }
-
-        // Get a reference to a mounted CardElement. Elements knows how
-        // to find your CardElement because there can only ever be one of
-        // each type of element.
         const card = elements.getElement(CardElement);
 
         if (card == null) {
@@ -85,6 +79,13 @@ const CheckoutForm = ({ totalPrice, closeModal, orderedData }) => {
                 if(data?.insertedId){
                     toast.success( 'Order placed successfully')
                 }
+                const {data :result}= await axiosSecure.patch(
+                    `/quantity-update/${orderedData?.plantId}`,
+                    {quantityToUpdate : orderedData?.quantity, 
+                    status: 'decrease' }
+                )
+                fetchPlant()
+                console.log(result)
             }catch(err){
                 console.log(err)
                 toast.error('something is wrong, try again')

@@ -1,8 +1,13 @@
 import useAuth from '../../../hooks/useAuth'
 
 import coverImg from '../../../assets/images/cover.jpg'
+import useRole from '../../../hooks/useRole'
+import LoadingSpinner from '../../../components/Shared/LoadingSpinner'
 const Profile = () => {
   const { user } = useAuth()
+  const [role, isRoleLoading]= useRole()
+
+  if(isRoleLoading) return <LoadingSpinner></LoadingSpinner>
 
   console.log(user)
   return (
@@ -22,8 +27,8 @@ const Profile = () => {
             />
           </a>
 
-          <p className='p-2 px-4 text-xs text-white bg-lime-500 rounded-full'>
-            Customer
+          <p className='p-2 px-4 text-xs uppercase text-white bg-lime-500 rounded-full'>
+            {role}
           </p>
           <p className='mt-2 text-xl font-medium text-gray-800 '>
             User Id: {user.uid}
